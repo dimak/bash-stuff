@@ -72,6 +72,29 @@ set_prompt() {
         fi
         echo $output
     }
+    #########################
+    # color-strip separator #
+    #########################
+    color_strip() {
+        local strip
+        local color_start=16
+        local color_end=21
+        local count=3
+        local char="▄"
+
+        for c in $(eval echo "{1..$count}")
+        do
+            for i in $(eval echo "{$color_start..$color_end}")
+            do
+                strip="${strip}$(tput setaf $i)${char}$(tput sgr 0)"
+            done
+            for i in $(eval echo "{$color_end..$color_start}")
+            do
+                strip="${strip}$(tput setaf $i)${char}$(tput sgr 0)"
+            done
+        done
+        echo -e $strip
+    }
 
     export PS1='\n\
 \[$(tput setaf 1)\]╓\[$(tput setaf 2)\] \D{%H:%M:%S}\[$(tput sgr0)\] $(get_relative_path) $(get_git_prompt)\n\
@@ -84,7 +107,40 @@ set_prompt
 # find git branch name #
 ########################
 get_git_branch() {
-   git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
+   #git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
+   git rev-parse --abbrev-ref HEAD
+}
+
+################################################
+# find all tests written for a specific branch #
+################################################
+cuke() {
+    # go to git root for current project
+    cd "$(git rev-parse --show-toplevel)"
+
+    # find the test prefix based on the BRANCH NAME
+    local pfx="@PB$(get_git_branch | sed -e 's/[^0-9]*//')"
+
+    # based on the pfx, find all tests that match such pfx in FEATURE files
+    local out=$(find features -type f -name '*.feature' -exec grep $pfx {} \;)
+
+    # change output to be comma-separated; using `echo -e` will print all tabs and newlines, so don't
+    out=$(echo $out) | tr ' ' ','
+
+    # set up our display var
+    out="--tags $out --tags ~@DRAFT"
+
+    # send messaging to the user
+    echo -e "$(tput bold)$(tput setaf 2)Running cucumber with the following command:$(tput sgr 0)"
+    echo "bundle exec cucumber $out"
+    echo
+    echo
+
+    # run the tests
+    bundle exec cucumber $out
+
+    # switch back to the originating dir
+    cd - &> /dev/null
 }
 
 
@@ -94,7 +150,6 @@ get_git_branch() {
 alias ls="ls -GFh"
 alias ll="ls -la"
 alias startserv="bundle exec rails server"
-alias cuke="bundle exec cucumber"
 
 #############################
 # git aliases and functions #
