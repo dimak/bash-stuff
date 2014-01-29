@@ -3,12 +3,14 @@
 	email = dkhayzin@mdsol.com
 [core]
 	excludesfile = /Users/dkhayzin/.gitignore_global
+[push]
+	default = current
 [alias]
-	ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate -20
+	ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
 	ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
 	filelog = log -u
 	dl = "!git ll -1" # diff in files between commits
-	f = "!git ls-files | grep -i" # find a file path
+	find = "!git ls-files | grep -i --color" # find a file path
 	alias = "!git config -l | grep alias | cut -c 7-"
 	cp = cherry-pick
 	st = status
@@ -21,4 +23,35 @@
 	prune-merged = "!f() { git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d; }; f"
 	dev-branch = "!f() { git checkout develop && git pull; }; f"
 	make-branch = "!f() { git checkout develop && git pull && git checkout -b $1; }; f"
-	up = "!git push origin HEAD"
+	mkbr = "!f() {\
+	    echo \"$(tput setaf 3)What kind of branch/prefix do you want?$(tput sgr 0)\";\
+	    echo '  1. Feature';\
+	    echo '  2. Fix';\
+	    echo '  3. None';\
+	    echo '  4. Custom';\
+	    echo '\n  x. Exit';\
+      local brname;\
+      read ans;\
+      case \"$ans\" in\
+        1 | '') brname="${brname}feature";;\
+        2) brname="${brname}fix";;\
+        3) ;;\
+        4) echo \"$(tput setaf 3)Please enter custom prefix:$(tput sgr 0)\";\
+           read ans;\
+           brname=$ans;\
+          ;;\
+        x | *) exit 1;;\
+      esac;\
+      echo \"$(tput setaf 3)What is your ticket name?$(tput sgr 0)\";\
+      read ans;\
+      if [ ! -z \"$ans\" ]; then\
+        brname="${brname}/${ans}";\
+      fi;\
+      echo \"$(tput setaf 3)Please enter a short description:$(tput sgr 0)\";\
+      read ans;\
+      if [ ! -z \"$ans\" ]; then\
+        ans=$(echo $ans | tr "[:upper:]" "[:lower:]" | sed -e "s/[\\\"\\']//g" -e "s/[^a-z0-9]/_/g" -e "s/__*/_/g" -e "s/^_//" -e "s/_$//");\
+        brname="${brname}/${ans}";\
+      fi;\
+      echo $brname;\
+    }; f"
