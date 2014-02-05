@@ -62,11 +62,15 @@ set_prompt() {
         local output
         if [[ $PWD =~ ^$ProjectPath/ ]]
         then
-            output="$(tput setaf 6)[$(get_git_branch)]$(tput sgr0)"
-            echo $(git status) | grep "nothing to commit" > /dev/null 2>&1
-            if [ $? != 0 ]
+            local br=$(get_git_branch)
+            if [[ ! -z $br ]]
             then
-                output="${output}$(tput setaf 1)$(tput bold)*"
+                output="$(tput setaf 6)[$br]$(tput sgr0)"
+                echo $(git status) | grep "nothing to commit" > /dev/null 2>&1
+                if [ $? != 0 ]
+                then
+                    output="${output}$(tput setaf 1)$(tput bold)*"
+                fi
             fi
             output="${output}$(tput sgr0)"
         fi
@@ -108,7 +112,7 @@ set_prompt
 ########################
 get_git_branch() {
    #git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'
-   git rev-parse --abbrev-ref HEAD
+   git rev-parse --abbrev-ref HEAD 2> /dev/null
 }
 
 ################################################
@@ -150,6 +154,7 @@ cuke() {
 alias ls="ls -GFh"
 alias ll="ls -la"
 alias startserv="bundle exec rails server"
+alias grep="grep --color"
 
 #############################
 # git aliases and functions #
