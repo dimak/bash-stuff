@@ -1,6 +1,6 @@
 [user]
-  name = Name
-  email = email@example.com
+  name = Dmitriy Khayzin
+  email = dmitriy.khayzin@pointsbet.com
 [core]
   excludesfile = ~/.gitignore_global
 [push]
@@ -34,15 +34,15 @@
   br = branch
   diff = diff --word-diff
   dc = diff --cached
-  # helpers
+  # helpers #
   msg = "!f () { echo \"\n$(tput setaf 220)>>> $1$(tput sgr0)\"; }; f"
   repo-name = "!f() { basename $(git rev-parse --show-toplevel); }; f"
   branch-name = "!f() { git rev-parse --abbrev-ref HEAD 2> /dev/null; }; f"
   origin-head = "!f() { \
-    local dirPath=$(git parent-branch-ref); \
+    local refPath=$(git parent-branch-ref); \
     local br=$1; \
     [ -z $br ] && br=$(git branch-name); \
-    local head=$(grep -w $br $dirPath 2> /dev/null | head -1 | awk '{print $2}'); \
+    local head=$(grep -w $br $refPath 2> /dev/null | head -1 | awk '{print $2}'); \
     if [ ! -z $head ]; then \
       echo $head;  \
     else \
@@ -50,7 +50,7 @@
     fi; \
   }; f"
   parent-branch-ref = "!f() { echo \"$HOME/.git-branches/$(git repo-name)\"; }; f"
-  # /helpers
+  # /helpers #
   undo-commit = reset --soft HEAD^
   src-branch = "!f() { \
     local head=$(git origin-head $1); \
@@ -64,37 +64,36 @@
   }; f"
   src-rebase = "!f() { \
     head=$(git origin-head); \
-    git src-branch && \
-    git co - && \
-    git msg \"git rebase $head\"; \
+    git src-branch \
+    && git co - \
+    && git msg \"git rebase $head\"; \
     git rebase $head; \
   }; f"
   prune-merged = "!f() { \
-    head=$(git origin-head); \
-     git checkout $head \
-    && git branch --merged $head \
+    git branch --merged $head \
     | grep -v '\\*' \
     | grep -v $head \
     | xargs -n 1 git branch -D; \
   }; f"
-  prune-merged-remote = "!f() { \
-    head=$(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4); \
-    git checkout $head && \
-    git pull && \
-    git remote prune origin && \
-    git branch -r --merged $head | \
-    grep -v 'origin/HEAD' | \
-    grep -v 'origin/master' | \
-    grep -v 'origin/develop' | \
-    sed 's/origin\\///' | \
-    xargs -n 1 git push --delete origin; \
-  }; f"
+  # prune-merged-remote = "!f() { \
+  #   head=$(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4); \
+  #   git checkout $head && \
+  #   git pull && \
+  #   git remote prune origin && \
+  #   git branch -r --merged $head | \
+  #   grep -v 'origin/HEAD' | \
+  #   grep -v 'origin/master' | \
+  #   grep -v 'origin/develop' | \
+  #   sed 's/origin\\///' | \
+  #   xargs -n 1 git push --delete origin; \
+  # }; f"
   make-branch = "!f() { git src-branch $1 && git checkout -b $1; }; f"
   make-branch-from = "!f() { \
     local refPath=$(git parent-branch-ref); \
     local br=$1; \
     [ ! -f \"$refPath\" ] && touch \"$refPath\"; \
     [ $br == '.' ] && br=$(git branch-name); \
+		sed -i.old \"\\^$2 ^d\" $refPath; \
     echo $2 $br >> $refPath; \
     git make-branch $2; \
   }; f"
