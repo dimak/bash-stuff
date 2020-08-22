@@ -1,57 +1,101 @@
 [user]
-	name = Dmitriy Khayzin
-	email = dkhayzin@mdsol.com
+	name = Name
+	email = email@example.com
 [core]
-	excludesfile = /Users/dkhayzin/.gitignore_global
+  excludesfile = ~/.gitignore_global
 [push]
-	default = current
+  default = current
+[color "status"]
+  branch = yellow bold
+  added = green
+  changed = yellow
+  untracked = red
+[color "diff"]
+  meta = yellow bold
+  frag = magenta
+  old = red
+  new = green
+[color "branch"]
+  current = green bold
+  local = white
+  remote = magenta
 [alias]
-	ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
-	ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
-	filelog = log -u
-	dl = "!git ll -1" # diff in files between commits
-	find = "!git ls-files | grep -i --color" # find a file path
-	alias = "!git config -l | grep alias | cut -c 7-"
-	cp = cherry-pick
-	st = status
-	cl = clone
-	ci = commit
-	co = checkout
-	br = branch 
-	diff = diff --word-diff
-	dc = diff --cached
-	prune-merged = "!f() { git branch --merged | grep -v '\\*' | xargs -n 1 git branch -d; }; f"
-	dev-branch = "!f() { git checkout develop && git pull; }; f"
-	make-branch = "!f() { git checkout develop && git pull && git checkout -b $1; }; f"
-	mkbr = "!f() {\
-	    echo \"$(tput setaf 3)What kind of branch/prefix do you want?$(tput sgr 0)\";\
-	    echo '  1. Feature';\
-	    echo '  2. Fix';\
-	    echo '  3. None';\
-	    echo '  4. Custom';\
-	    echo '\n  x. Exit';\
-      local brname;\
-      read ans;\
-      case \"$ans\" in\
-        1 | '') brname="${brname}feature";;\
-        2) brname="${brname}fix";;\
-        3) ;;\
-        4) echo \"$(tput setaf 3)Please enter custom prefix:$(tput sgr 0)\";\
-           read ans;\
-           brname=$ans;\
-          ;;\
-        x | *) exit 1;;\
-      esac;\
-      echo \"$(tput setaf 3)What is your ticket name?$(tput sgr 0)\";\
-      read ans;\
-      if [ ! -z \"$ans\" ]; then\
-        brname="${brname}/${ans}";\
-      fi;\
-      echo \"$(tput setaf 3)Please enter a short description:$(tput sgr 0)\";\
-      read ans;\
-      if [ ! -z \"$ans\" ]; then\
-        ans=$(echo $ans | tr "[:upper:]" "[:lower:]" | sed -e "s/[\\\"\\']//g" -e "s/[^a-z0-9]/_/g" -e "s/__*/_/g" -e "s/^_//" -e "s/_$//");\
-        brname="${brname}/${ans}";\
-      fi;\
-      echo $brname;\
-    }; f"
+  ls = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate
+  ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --numstat
+  last = !git ll -1 HEAD
+  filelog = log -u
+  dl = "!git ll -1" # diff in files between commits
+  find = "!git ls-files | grep -i --color" # find a file path
+  alias = "!git config -l | grep alias | cut -c 7-"
+  cp = cherry-pick
+  st = status
+  ci = commit
+  co = checkout
+  br = branch
+  diff = diff --word-diff
+  dc = diff --cached
+  # helpers
+  msg = "!f () { echo \"\n$(tput setaf 220)>>> $1$(tput sgr0)\"; }; f"
+  repo-name = "!f() { basename $(git rev-parse --show-toplevel); }; f"
+  branch-name = "!f() { git rev-parse --abbrev-ref HEAD 2> /dev/null; }; f"
+  origin-head = "!f() { \
+    local dirPath=$(git parent-branch-ref); \
+    local br=$1; \
+    [ -z $br ] && br=$(git branch-name); \
+    local head=$(grep -w $br $dirPath 2> /dev/null | head -1 | awk '{print $2}'); \
+    if [ ! -z $head ]; then \
+      echo $head;  \
+    else \
+      git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4; \
+    fi; \
+  }; f"
+  parent-branch-ref = "!f() { echo \"$HOME/.git-branches/$(git repo-name)\"; }; f"
+  # /helpers
+  undo-commit = reset --soft HEAD^
+  src-branch = "!f() { \
+    local head=$(git origin-head $1); \
+    if [[ \"$(git remote)\" =~ upstream ]]; then \
+      remote=upstream; \
+    else \
+      remote=origin; \
+    fi; \
+    git msg \"git checkout $head && git pull $remote $head\"; \
+    git checkout $head && git pull $remote $head; \
+  }; f"
+  src-rebase = "!f() { \
+    head=$(git origin-head); \
+    git src-branch && \
+    git co - && \
+    git msg \"git rebase $head\"; \
+    git rebase $head; \
+  }; f"
+  prune-merged = "!f() { \
+    head=$(git origin-head); \
+     git checkout $head \
+    && git branch --merged $head \
+    | grep -v '\\*' \
+    | grep -v $head \
+    | xargs -n 1 git branch -D; \
+  }; f"
+  prune-merged-remote = "!f() { \
+    head=$(git symbolic-ref refs/remotes/origin/HEAD | cut -d'/' -f4); \
+    git checkout $head && \
+    git pull && \
+    git remote prune origin && \
+    git branch -r --merged $head | \
+    grep -v 'origin/HEAD' | \
+    grep -v 'origin/master' | \
+    grep -v 'origin/develop' | \
+    sed 's/origin\\///' | \
+    xargs -n 1 git push --delete origin; \
+  }; f"
+  make-branch = "!f() { git src-branch $1 && git checkout -b $1; }; f"
+  make-branch-from = "!f() { \
+    local refPath=$(git parent-branch-ref); \
+    local br=$1; \
+    [ ! -f \"$refPath\" ] && touch \"$refPath\"; \
+    [ $br == '.' ] && br=$(git branch-name); \
+    echo $2 $br >> $refPath; \
+    git make-branch $2; \
+  }; f"
+  pristine = "!f() { git clean -df && git reset --hard; }; f"
