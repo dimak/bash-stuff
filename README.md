@@ -1,4 +1,4 @@
-bash-stuff
+Shell scripts to make life easier
 ==========
 
 Various bash scripts, utils, aliases, and other random niceness
