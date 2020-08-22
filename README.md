@@ -1,7 +1,7 @@
 Shell scripts to make life easier
 ==========
 
-Various bash scripts, utils, aliases, and other random niceness. Mostly tested with Mac OS.
+Various bash scripts, utils, aliases, and other random niceness. Mostly tested with OSX+.
 
 External Sources
 ----------------
