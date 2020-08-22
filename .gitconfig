@@ -93,7 +93,7 @@
     local br=$1; \
     [ ! -f \"$refPath\" ] && touch \"$refPath\"; \
     [ $br == '.' ] && br=$(git branch-name); \
-		sed -i.old \"\\^$2 ^d\" $refPath; \
+    sed -i.old \"\\^$2 ^d\" $refPath; \
     echo $2 $br >> $refPath; \
     git make-branch $2; \
   }; f"
