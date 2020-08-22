@@ -1,6 +1,6 @@
 [user]
-  name = Dmitriy Khayzin
-  email = dmitriy.khayzin@pointsbet.com
+  name = Name
+  email = user@email.com
 [core]
   excludesfile = ~/.gitignore_global
 [push]
